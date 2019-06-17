@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:login_with_flutter/model/user.model.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   LoginPage({Key key, this.title}) : super(key: key);
@@ -13,10 +13,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final _formKey = GlobalKey<FormState>();
-
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -56,14 +53,14 @@ class _LoginPageState extends State<LoginPage> {
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: RaisedButton(
         onPressed: () {
+          var userModel = Provider.of<UserModel>(context);
           var email = _emailController.text;
           var password = _passwordController.text;
-          _handleSignInWithEmail(email, password).then((user) {
+          userModel.handleSignInWithEmail(email, password).then((user) {
             Scaffold.of(context).showSnackBar(
               SnackBar(
                 content: Text("Welcome ${user.displayName}"),
               ),
-              // TODO: We navigate to a next page
             );
           }).catchError((error) {
             if (error is PlatformException)
@@ -90,7 +87,8 @@ class _LoginPageState extends State<LoginPage> {
 
     var loginWithGoogleService = RaisedButton(
       onPressed: () {
-        _handleSignInWithGoogle().then((user) {
+        var userModel = Provider.of<UserModel>(context);
+        userModel.handleSignInWithGoogle().then((user) {
           Scaffold.of(context).showSnackBar(
             SnackBar(
               content: Text("Welcome ${user.displayName}"),
@@ -125,27 +123,5 @@ class _LoginPageState extends State<LoginPage> {
         ],
       ),
     );
-  }
-
-  Future<FirebaseUser> _handleSignInWithEmail(
-    String email,
-    String password,
-  ) async {
-    return _auth.signInWithEmailAndPassword(email: email, password: password);
-  }
-
-  Future<FirebaseUser> _handleSignInWithGoogle() async {
-    final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
-
-    final AuthCredential credential = GoogleAuthProvider.getCredential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    final FirebaseUser user = await _auth.signInWithCredential(credential);
-    print("signed in " + user.displayName);
-    return user;
   }
 }
